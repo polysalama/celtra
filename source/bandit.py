@@ -1,4 +1,5 @@
 import urllib.request
+from urllib.error import URLError
 from scipy.stats import beta
 import sys
 
@@ -20,7 +21,17 @@ def bandit(url):
         #izberemo avtomat z najvecjo vrednosjo vzorca
         selected = samples.index(max(samples))
         #potegnemo izbran avtomat, poveca se stevec zmag avtomata in stevec skupnih uspesnih potegov
-        pull = int(urllib.request.urlopen(url + "/" + str(selected + 1) + "/" + str(j + 1)).read())
+        pull = -1
+        trys = 0
+        while pull == -1:
+            trys += 1
+            try:
+                pull = int(urllib.request.urlopen(url + "/" + str(selected + 1) + "/" + str(j + 1)).read())
+            except URLError as e:
+                print("Srežnik ni odgovoril, poskušam ponovno.")
+                if trys >= 5:
+                    print("NAPAKA V POVEZAVI!")
+                    return -1
         machines[selected] += pull
         wins += pull
     return wins
@@ -31,4 +42,6 @@ def bandit(url):
 
 
 if __name__ == '__main__':
-    print(bandit(sys.argv[1]))
+    rez = bandit(sys.argv[1])
+    if rez != -1:
+        print("Število uspešnih potegov = " + str(rez))
